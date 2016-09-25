@@ -12,6 +12,7 @@ train$prefix<-sub('(.*, )','',train$Name)
 train$prefix<-sub('(\\..*)','',train$prefix)
 
 #Correecting Prefix Data
+
 train$prefix[train$prefix=="Mlle"]<-'Miss'
 train$prefix[train$prefix=="Ms"]<-'Miss'
 train$prefix[train$prefix=="Mme"]<-'Mr'
@@ -68,7 +69,7 @@ train$Deck<-factor(sapply(train$Cabin, function(x) strsplit(as.vector(x),NULL)[[
 
 #For 1044 no fare is given so we estimate the Price
 summary(train$Fare[train$Embarked=="S" & train$Pclass=="3" & train$PassengerId!=1044 & train$prefix=="Mr"])
-train$Fare[1044]<-mean(8.050,7.925)
+train$Fare[1044]<- median(train[train$Pclass == '3' & train$Embarked == 'S' & train$Deck=='G',]$Fare, na.rm = TRUE)
 
 #
 ##
@@ -95,3 +96,30 @@ print (y)
     }}
 }
 }
+
+
+# Perform mice imputation, to find ages:
+train$prefix<-factor(train$prefix)
+mice_mod <- mice(train[, !names(train) %in% c('PassengerId','Name','Ticket','Cabin','Survived')],m=10,seed=500, method='pmm') 
+mice_output<-complete(mice_mod)
+train$Age <- mice_output$Age
+
+
+#Some additional intuitive parameters
+train$Child[train$Age < 18] <- 'Child'
+train$Child[train$Age >= 18] <- 'Adult'
+train$Mother <- 'Not Mother'
+train$Mother[train$Sex == 'female' & train$Parch > 0 & train$Age > 18 & train$prefix != 'Miss'] <- 'Mother'
+table(train$Mother, train$Survived)
+
+
+#Last minute factorizing
+train$familySizeDimension<-factor(train$familySizeDimension)
+train$Child<-factor(train$Child)
+train$Mother<-factor(train$Mother)
+summary(train)
+
+#dividing the dataSet for testing and training on rf
+test <- train[892:1309,]
+train <- full[1:891,]
+
