@@ -121,5 +121,19 @@ summary(train)
 
 #dividing the dataSet for testing and training on rf
 test <- train[892:1309,]
-train <- full[1:891,]
+train <- train[1:891,]
 
+
+# Build the model (note: not all possible variables are used)
+Smodel <- randomForest(factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked + prefix + familySizeDimension + Child + Mother,data = train)
+#Plot model error
+plot(Smodel, ylim=c(0,0.36))
+legend('topright', colnames(Smodel$err.rate), col=1:3, fill=1:3)
+
+
+prediction <- predict(Smodel, test)
+# Save the solution to a dataframe with two columns: PassengerId and Survived (prediction)
+solution <- data.frame(PassengerID = test$PassengerId, Survived = prediction)
+summary(solution)
+# Write the solution to file
+head(solution)
